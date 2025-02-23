@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rocket Timing Game</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: white;
+            overflow: hidden;
+            margin: 0;
+            touch-action: manipulation;
+        }
+        canvas {
+            display: block;
+            margin: auto;
+            border-radius: 10px;
+            background-color: black;
+        }
+        #heightDisplay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="heightDisplay">Height: <span id="height">0</span></div>
+    <canvas id="gameCanvas" width="300" height="500"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const heightDisplay = document.getElementById("height");
+        let height = 0;
+        let angle = 0;
+        let targetStart = Math.random() * 360;
+        let targetEnd = targetStart + 40;
+        let isPlaying = true;
+        let velocity = 0;
+
+        const rocketImg = new Image();
+        rocketImg.src = "finalrocket.png";
+
+        const bgImage = new Image();
+        bgImage.src = "final.png";
+
+        const birdImgLeft1 = new Image();
+        birdImgLeft1.src = "rbirdup.png";
+        const birdImgLeft2 = new Image();
+        birdImgLeft2.src = "rbirddown.png";
+        const birdImgRight1 = new Image();
+        birdImgRight1.src = "birdup.png";
+        const birdImgRight2 = new Image();
+        birdImgRight2.src = "birddown.png";
+
+        let birds = [];
+        let birdFrame = 0;
+
+        function spawnBird() {
+            let side = Math.random() < 0.5 ? "left" : "right";
+            let bird = {
+                x: side === "left" ? -20 : canvas.width + 20,
+                y: Math.random() * 200 + 150, 
+                speed: Math.random() * 0.7 + 0.3,
+                direction: side === "left" ? 1 : -1
+            };
+            birds.push(bird);
+        }
+
+        setInterval(spawnBird, 2000);
+        setInterval(() => birdFrame = (birdFrame + 1) % 2, 200);
+
+        function drawScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(rocketImg, canvas.width / 2 - 10, canvas.height - (height + 40), 20, 40);
+            
+            birds.forEach((bird, index) => {
+                bird.x += bird.speed * bird.direction;
+                let birdImg = bird.direction === 1 ? (birdFrame === 0 ? birdImgRight1 : birdImgRight2) : (birdFrame === 0 ? birdImgLeft1 : birdImgLeft2);
+                ctx.drawImage(birdImg, bird.x, bird.y, 35, 25);
+
+                let birdHitbox = { x: bird.x + 5, y: bird.y + 5, width: 25, height: 15 };
+                let rocketHitbox = { x: canvas.width / 2 - 10, y: canvas.height - (height + 40), width: 20, height: 40 };
+
+                if (
+                    rocketHitbox.x < birdHitbox.x + birdHitbox.width &&
+                    rocketHitbox.x + rocketHitbox.width > birdHitbox.x &&
+                    rocketHitbox.y < birdHitbox.y + birdHitbox.height &&
+                    rocketHitbox.y + rocketHitbox.height > birdHitbox.y
+                ) {
+                    alert("Hit a bird! Game Over.");
+                    resetGame(false);
+                }
+                if (bird.x < -40 || bird.x > canvas.width + 40) {
+                    birds.splice(index, 1);
+                }
+            });
+
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height - 80, 40, 0, 2 * Math.PI);
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.strokeStyle = "green";
+            ctx.lineWidth = 5;
+            ctx.arc(canvas.width / 2, canvas.height - 80, 40, targetStart * Math.PI / 180, targetEnd * Math.PI / 180);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, canvas.height - 80);
+            ctx.lineTo(canvas.width / 2 + 40 * Math.cos(angle * Math.PI / 180), canvas.height - 80 + 40 * Math.sin(angle * Math.PI / 180));
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        function rotateArrow() {
+            if (isPlaying) {
+                angle = (angle + 3) % 360;
+                drawScene();
+                requestAnimationFrame(rotateArrow);
+            }
+        }
+
+        function applyGravity() {
+            if (isPlaying) {
+                velocity += 0.02;
+                height -= velocity;
+                if (height < 0) height = 0;
+                heightDisplay.textContent = Math.max(0, Math.round(height));
+                drawScene();
+            }
+            requestAnimationFrame(applyGravity);
+        }
+
+        function resetGame(resetMeter = true) {
+            height = 0;
+            velocity = 0;
+            birds = [];
+            if (resetMeter) {
+                angle = 0;
+                targetStart = Math.random() * 360;
+                targetEnd = targetStart + 40;
+            }
+            isPlaying = true;
+            heightDisplay.textContent = height;
+        }
+
+        canvas.addEventListener("click", () => {
+            if (!isPlaying) return;
+            if (angle >= targetStart && angle <= targetEnd) {
+                velocity = -1.5;
+                height += 10;
+                heightDisplay.textContent = height;
+                targetStart = Math.random() * 360;
+                targetEnd = targetStart + 40;
+
+                if (height >= 500) {
+                    alert("You reached deep space! You win!");
+                    resetGame();
+                }
+            } else {
+                alert("Missed! Rocket falls down.");
+                resetGame();
+            }
+        });
+
+        rotateArrow();
+        applyGravity();
+    </script>
+</body>
+</html>
