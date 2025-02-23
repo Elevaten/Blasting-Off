@@ -15,18 +15,26 @@
             touch-action: manipulation;
         }
         canvas {
-            display: block;
-            margin: auto;
-            border-radius: 10px;
-            background-color: black;
-        }
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30vw;
+    height: 100vh;
+    background-color: black;
+    transform: translate(-50%, -50%);
+}
+
         #heightDisplay {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 20px;
-            font-weight: bold;
-        }
+    position: absolute;
+    top: 5%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+}
+
     </style>
 </head>
 <body>
@@ -131,7 +139,7 @@
                 (normalizedTargetStart > normalizedTargetEnd && (normalizedAngle >= normalizedTargetStart || normalizedAngle <= normalizedTargetEnd))
             ) {
                 velocity = -1.5;
-                height += 10;
+                height += 7; // Reduced height increase
                 heightDisplay.textContent = height;
                 targetStart = Math.random() * 360;
                 targetSize = Math.max(10, targetSize - 5); // Gradually decrease target size
